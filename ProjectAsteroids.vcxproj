@@ -118,6 +118,7 @@
     <ClInclude Include="Direct2DManager.h" />
     <ClInclude Include="GameController.h" />
     <ClInclude Include="GameLevel.h" />
+    <ClInclude Include="GUIButton.h" />
     <ClInclude Include="GUIStatic.h" />
     <ClInclude Include="GUIText.h" />
     <ClInclude Include="Level1.h" />
@@ -136,6 +137,7 @@
     <ClCompile Include="Asteroid.cpp" />
     <ClCompile Include="Direct2DManager.cpp" />
     <ClCompile Include="GameController.cpp" />
+    <ClCompile Include="GUIButton.cpp" />
     <ClCompile Include="GUIStatic.cpp" />
     <ClCompile Include="GUIText.cpp" />
     <ClCompile Include="Level1.cpp" />

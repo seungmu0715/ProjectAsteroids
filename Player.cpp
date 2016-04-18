@@ -21,17 +21,6 @@ void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 
 void Player::Update(DWORD delta)
 {
-	// 마우스 위치가 바뀌었다면 새로운 Path를 생성한다
-	if (m_PosX != m_ReservX || m_PosY != m_ReservY)
-	{
-		Path* path = new Path();
-		path->Initialize(D2D1::Point2F((float)m_ReservX, (float)m_ReservY), m_Duration);
-		m_Path.push_back(path);
-	}
-
-	m_PosX = m_ReservX;
-	m_PosY = m_ReservY;
-
 	// Path의 수명을 소모하게 한다. 수명이 다 한 Path는 삭제한다
 	for (std::vector<Path*>::iterator itr = m_Path.begin(); itr != m_Path.end();)
 	{
@@ -55,6 +44,20 @@ void Player::Update(DWORD delta)
 		else
 			itr++;
 	}
+
+	if (m_IsDead)
+		return;
+
+	// 마우스 위치가 바뀌었다면 새로운 Path를 생성한다
+	if (m_PosX != m_ReservX || m_PosY != m_ReservY)
+	{
+		Path* path = new Path();
+		path->Initialize(D2D1::Point2F((float)m_ReservX, (float)m_ReservY), m_Duration);
+		m_Path.push_back(path);
+	}
+
+	m_PosX = m_ReservX;
+	m_PosY = m_ReservY;
 
 	// 현재 Path의 길이가 4 이상 (3 이하만으로는 고리를 이룰 수 없다), 현재 Loop가 없을 경우
 	// 고리 형태를 이루는 Path가 존재하는지 검사하고 생성한다
@@ -162,6 +165,7 @@ void Player::Update(DWORD delta)
 				newLoop->Initialize(position);
 				m_Loop.push_back(newLoop);
 
+				delete *itr;
 				tempItr = m_Path.erase(--itr.base());
 				itr = std::vector<Path*>::reverse_iterator(++tempItr);
 			}
@@ -213,7 +217,7 @@ void Player::Render()
 		m_RenderTarget->DrawLine(m_Loop.back()->GetPosition(), m_Loop.front()->GetPosition(), m_Brush);
 
 	if (!m_IsDying)
-		m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 0, frame);
+		m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 0, frame, 1.0f);
 	else
 	{
 		if (!m_IsDead)
@@ -221,7 +225,7 @@ void Player::Render()
 			if (frame == 3)
 				m_IsDead = true;
 
-			m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 1, frame);
+			m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 1, frame, 1.0f);
 		}
 	}
 }
@@ -233,12 +237,14 @@ void Player::Shutdown()
 		delete *itr;
 		itr = m_Loop.erase(itr);
 	}
+	m_Loop.clear();
 
 	for (std::vector<Path*>::iterator itr = m_Path.begin(); itr != m_Path.end();)
 	{
 		delete *itr;
 		itr = m_Path.erase(itr);
 	}
+	m_Path.clear();
 }
 
 std::vector<Loop*>::iterator Player::GetLoopBegin()

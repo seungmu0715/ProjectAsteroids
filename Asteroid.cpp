@@ -32,7 +32,7 @@ void Asteroid::Render()
 	int frame = (m_Frame++ / 4) % 4;
 
 	if (!m_IsDying)
-		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, 0);
+		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, 0, 1.0f);
 	else
 	{
 		if (!m_IsDead)
@@ -40,7 +40,7 @@ void Asteroid::Render()
 			if (frame == 3)
 				m_IsDead = true;
 
-			m_Sprite->Draw(m_PosX, m_PosY, m_Size, 1, frame);
+			m_Sprite->Draw(m_PosX, m_PosY, m_Size, 1, frame, 1.0f);
 		}
 	}
 }

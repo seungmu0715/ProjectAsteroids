@@ -145,19 +145,18 @@ Sprite * ResourceManager::GetSprite(wchar_t * filename)
 
 void ResourceManager::Shutdown()
 {
-	for (int i = 0; i < m_Filenames.size(); i++)
+	for (std::vector<wchar_t*>::iterator itr = m_Filenames.begin(); itr != m_Filenames.end();)
 	{
-		delete m_Filenames[i];
-		m_Filenames[i] = nullptr;
+		delete *itr;
+		itr = m_Filenames.erase(itr);
 	}
-
-	for (int i = 0; i < m_Sprites.size(); i++)
-	{
-		m_Sprites[i]->Shutdown();
-		delete m_Sprites[i];
-		m_Sprites[i] = nullptr;
-	}
-
 	m_Filenames.clear();
+
+	for (std::vector<Sprite*>::iterator itr = m_Sprites.begin(); itr != m_Sprites.end();)
+	{
+		(*itr)->Shutdown();
+		delete *itr;
+		itr = m_Sprites.erase(itr);
+	}
 	m_Sprites.clear();
 }

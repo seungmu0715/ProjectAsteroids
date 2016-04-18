@@ -33,8 +33,8 @@ bool GameController::Initialize(HWND hWnd)
 {
 	bool result;
 
-	GetClientRect(hWnd, &m_Rect);
-
+	m_hWnd = hWnd;
+	
 	m_Direct2DManager = new Direct2DManager();
 	if (!m_Direct2DManager)
 		return false;
@@ -71,7 +71,12 @@ void GameController::Shutdown()
 	{
 		if (m_Levels[i] != nullptr)
 		{
-			m_Levels[i]->UnLoad();
+			if (m_IsLevelLoaded[i] == true)
+			{
+				m_Levels[i]->UnLoad();
+				m_IsLevelLoaded[i] = false;
+			}
+
 			delete m_Levels[i];
 			m_Levels[i] = nullptr;
 		}
@@ -92,7 +97,7 @@ bool GameController::LoadMenuLevel()
 	if (!m_IsLevelLoaded[0])
 	{
 		m_Loading = true;
-		result = m_Levels[0]->Load(m_Direct2DManager->GetRenderTarget(), m_Rect, std::bind(&GameController::LoadMenuLevel, this), std::bind(&GameController::LoadNextLevel, this));
+		result = m_Levels[0]->Load(m_hWnd, m_Direct2DManager->GetRenderTarget(), std::bind(&GameController::LoadMenuLevel, this), std::bind(&GameController::LoadNextLevel, this), std::bind(&GameController::ExitGame, this));
 		m_Loading = false;
 
 		if (!result)
@@ -119,7 +124,7 @@ bool GameController::LoadNextLevel()
 	bool result;
 
 	m_Loading = true;
-	result = m_Levels[m_CurrentLevel + 1]->Load(m_Direct2DManager->GetRenderTarget(), m_Rect, std::bind(&GameController::LoadMenuLevel, this), std::bind(&GameController::LoadNextLevel, this));
+	result = m_Levels[m_CurrentLevel + 1]->Load(m_hWnd, m_Direct2DManager->GetRenderTarget(), std::bind(&GameController::LoadMenuLevel, this), std::bind(&GameController::LoadNextLevel, this), std::bind(&GameController::ExitGame, this));
 	m_Loading = false;
 
 	if (!result)
@@ -137,6 +142,12 @@ bool GameController::LoadNextLevel()
 	m_IsLevelLoaded[++m_CurrentLevel] = true;
 
 	return m_Levels[m_CurrentLevel];
+}
+
+void GameController::ExitGame()
+{
+	Shutdown();
+	PostMessage(m_hWnd, WM_CLOSE, NULL, NULL);
 }
 
 void GameController::OnMouseMessage(HWND hWnd, UINT message, LPARAM lParam)

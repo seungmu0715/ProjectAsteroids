@@ -2,10 +2,19 @@
 #include "GameLevel.h"
 class MenuLevel : public GameLevel
 {
+private:
+	bool InitializeGUI();
+
+	GUIButton*	m_Btn[2];
+
+	int			m_MouseX, m_MouseY;
+
+	bool		m_GUIInitialized;
+
 public:
 	MenuLevel();
 
-	virtual bool Load(ID2D1HwndRenderTarget* renderTarget, RECT rect, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel) override;
+	virtual bool Load(HWND hWnd, ID2D1HwndRenderTarget * renderTarget, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel, ExitGame exitGame) override;
 	virtual void UnLoad() override;
 	virtual void Update(DWORD delta) override;
 	virtual void Render() override;

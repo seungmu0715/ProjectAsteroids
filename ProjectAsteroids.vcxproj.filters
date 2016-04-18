@@ -72,6 +72,9 @@
     <ClInclude Include="Util.h">
       <Filter>헤더 파일\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>헤더 파일\Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Level1.cpp">
@@ -117,6 +120,9 @@
       <Filter>소스 파일\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
+      <Filter>소스 파일\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="GUIButton.cpp">
       <Filter>소스 파일\Engine</Filter>
     </ClCompile>
   </ItemGroup>

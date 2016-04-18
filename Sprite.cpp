@@ -29,7 +29,7 @@ void Sprite::Shutdown()
 	}
 }
 
-void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex)
+void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex, float opacity)
 {
 	float left, top, right, bottom;
 	left = IMAGE_SIZE * frameIndex;
@@ -42,7 +42,7 @@ void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex)
 
 	m_RenderTarget->DrawBitmap(m_Bitmap,
 		D2D1::RectF((FLOAT)x, (FLOAT)y, x + IMAGE_SIZE * size, y + IMAGE_SIZE * size),
-		1.0f,		// Oppacity
+		opacity,		// Oppacity
 		D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
 		D2D1::RectF(left, top, right, bottom)		// src image rect
 		);

@@ -6,8 +6,8 @@ bool Level1::InitializeGUI()
 {
 	HRESULT result;
 	IDWriteFactory2* writeFactory;
-	static const WCHAR msc_FontName[] = L"Verdana";
-	static const FLOAT msc_FontSize = 20.0f;
+	const WCHAR msc_FontName[] = L"Verdana";
+	const FLOAT msc_FontSize = 20.0f;
 	const float margin = IMAGE_SIZE / 4;
 
 	result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), reinterpret_cast<IUnknown **>(&writeFactory));
@@ -21,33 +21,94 @@ bool Level1::InitializeGUI()
 	m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
+	result = writeFactory->CreateTextFormat(msc_FontName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, msc_FontSize * 2.0f, L"", &m_LargeTextFormat);
+	if (FAILED(result))
+		return false;
+
+	m_LargeTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+	m_LargeTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
 	writeFactory->Release();
 	writeFactory = nullptr;
 
-	GUIStatic* newStatic = new GUIStatic();
-	newStatic->Initialize(m_ResourceManager->GetSprite(L"res\\spaceship.png"), IMAGE_SIZE + margin, IMAGE_SIZE / 2, 0.5f, true);
-	m_Static.push_back(newStatic);
+	// 목숨
+	m_Static[0] = new GUIStatic();
+	m_Static[0]->Initialize(m_ResourceManager->GetSprite(L"res\\spaceship.png"), IMAGE_SIZE + margin, IMAGE_SIZE / 2, 0.5f, true);
 
-	newStatic = new GUIStatic();
-	newStatic->Initialize(m_ResourceManager->GetSprite(L"res\\bomb.png"), (m_Rect.right - m_Rect.left) - IMAGE_SIZE * 2, IMAGE_SIZE / 2, 0.5f, false);
-	m_Static.push_back(newStatic);
+	// 폭탄
+	m_Static[1] = new GUIStatic();
+	m_Static[1]->Initialize(m_ResourceManager->GetSprite(L"res\\bomb.png"), (m_Rect.right - m_Rect.left) - IMAGE_SIZE * 2, IMAGE_SIZE / 2, 0.5f, false);
 
-	GUIText* newText = new GUIText();
-	newText->Initialize(m_RenderTarget, m_TextFormat, IMAGE_SIZE * 2, IMAGE_SIZE / 2, 1, D2D1::ColorF::White);
-	newText->SetText(m_Life);
-	m_Text.push_back(newText);
+	// 목숨
+	m_Text[0] = new GUIText();
+	m_Text[0]->Initialize(m_RenderTarget, m_TextFormat, IMAGE_SIZE * 2, IMAGE_SIZE / 2, 1, D2D1::ColorF::White);
+	m_Text[0]->SetText(m_Life);
 
-	newText = new GUIText();
-	newText->Initialize(m_RenderTarget, m_TextFormat, (m_Rect.right - m_Rect.left) - IMAGE_SIZE - margin, IMAGE_SIZE / 2, 1, D2D1::ColorF::White);
-	newText->SetText(m_Bomb);
-	m_Text.push_back(newText);
+	// 폭탄
+	m_Text[1] = new GUIText();
+	m_Text[1]->Initialize(m_RenderTarget, m_TextFormat, (m_Rect.right - m_Rect.left) - IMAGE_SIZE - margin, IMAGE_SIZE / 2, 1, D2D1::ColorF::White);
+	m_Text[1]->SetText(m_Bomb);
 
-	newText = new GUIText();
-	newText->Initialize(m_RenderTarget, m_TextFormat, (m_Rect.right - m_Rect.left) / 2, IMAGE_SIZE / 2, 2, D2D1::ColorF::White);
-	newText->SetText(m_Score);
-	m_Text.push_back(newText);
+	// 점수
+	m_Text[2] = new GUIText();
+	m_Text[2]->Initialize(m_RenderTarget, m_TextFormat, (m_Rect.right - m_Rect.left) / 2, IMAGE_SIZE / 2, 2, D2D1::ColorF::White);
+	m_Text[2]->SetText(m_Score);
 
-	return true;
+	// 일시정지
+	m_PauseText = new GUIText();
+	m_PauseText->Initialize(m_RenderTarget, m_LargeTextFormat, (m_Rect.right - m_Rect.left) / 2, (m_Rect.bottom - m_Rect.top) / 2, 4, D2D1::ColorF::White, L"일시 정지");
+
+	// 게임 오버
+	m_GameOverText = new GUIText();
+	m_GameOverText->Initialize(m_RenderTarget, m_LargeTextFormat, (m_Rect.right - m_Rect.left) / 2, (m_Rect.bottom - m_Rect.top) / 2, 4, D2D1::ColorF::White, L"Game Over");
+
+	// 버튼 만들기
+	ColorSet newColorSet;
+	newColorSet.NormalColor = D2D1::ColorF::White;
+	newColorSet.HoverdColor = D2D1::ColorF::DarkCyan;
+	newColorSet.PressedColor = D2D1::ColorF::Cyan;
+	newColorSet.DisabledColor = D2D1::ColorF::Gray;
+
+	m_Btn = new GUIButton();
+	m_Btn->Initialize(m_RenderTarget, m_TextFormat, (m_Rect.right - m_Rect.left) / 2, (m_Rect.bottom - m_Rect.top) * 3 / 4, 4, newColorSet, L"메인 메뉴로");
+	m_Btn->SetDisabled();
+
+	m_GUIInitialized = true;
+	return m_GUIInitialized;
+}
+
+void Level1::ShutdownGUI()
+{
+	if (m_Btn)
+	{
+		m_Btn->Shutdown();
+		delete m_Btn;
+		m_Btn = nullptr;
+	}
+
+	if (m_GameOverText)
+	{
+		delete m_GameOverText;
+		m_GameOverText = nullptr;
+	}
+
+	if (m_PauseText)
+	{
+		delete m_PauseText;
+		m_PauseText = nullptr;
+	}
+
+	for (int i = 0; i < ARRAYSIZE(m_Text); i++)
+	{
+		delete m_Text[i];
+		m_Text[i] = nullptr;
+	}
+
+	for (int i = 0; i < ARRAYSIZE(m_Static); i++)
+	{
+		delete m_Static[i];
+		m_Static[i] = nullptr;
+	}
 }
 
 void Level1::SpawnAsteroids()
@@ -90,22 +151,28 @@ Level1::Level1()
 
 	m_Player = nullptr;
 	m_NumberOfAsteroid = 15;
-	m_GameOver = false;
 	m_Frame = 0;
 	m_Life = 2;
 	m_Bomb = 5;
 	m_Score = 0;
+
+	m_GUIInitialized = false;
+	m_GameOver = false;
+	m_Pause = false;
 }
 
-bool Level1::Load(ID2D1HwndRenderTarget * renderTarget, RECT rect, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel)
+bool Level1::Load(HWND hWnd, ID2D1HwndRenderTarget * renderTarget, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel, ExitGame exitGame)
 {
 	bool result;
 
+	m_hWnd = hWnd;
 	m_RenderTarget = renderTarget;
-	m_Rect = rect;
+
+	GetClientRect(m_hWnd, &m_Rect);
 
 	m_CallBackMenuLevel = std::move(loadMenuLevel);
 	m_CallBackNextLevel = std::move(loadNextLevel);
+	m_CallBackExitGame = std::move(exitGame);
 
 	m_ResourceManager = new ResourceManager();
 	if (!m_ResourceManager)
@@ -128,16 +195,24 @@ bool Level1::Load(ID2D1HwndRenderTarget * renderTarget, RECT rect, LoadMenuLevel
 	srand(time(NULL));
 	SpawnAsteroids();
 
+	m_CursorPos.x = (m_Rect.right - m_Rect.left) / 2;
+	m_CursorPos.y = (m_Rect.bottom - m_Rect.top) / 2;
+	ClientToScreen(m_hWnd, &m_CursorPos);
+	SetCursorPos(m_CursorPos.x, m_CursorPos.y);
+
 	return true;
 }
 
 void Level1::UnLoad()
 {
+	ShutdownGUI();
+
 	for (std::list<Asteroid*>::iterator itr = m_Asteroid.begin(); itr != m_Asteroid.end();)
 	{
 		delete *itr;
 		itr = m_Asteroid.erase(itr);
 	}
+	m_Asteroid.clear();
 
 	if (m_Player)
 	{
@@ -146,41 +221,35 @@ void Level1::UnLoad()
 		m_Player = nullptr;
 	}
 
-	for (std::vector<GUIText*>::iterator itr = m_Text.begin(); itr != m_Text.end();)
-	{
-		delete *itr;
-		itr = m_Text.erase(itr);
-	}
-
-	for (std::vector<GUIStatic*>::iterator itr = m_Static.begin(); itr != m_Static.end();)
-	{
-		delete *itr;
-		itr = m_Static.erase(itr);
-	}
-
 	if (m_ResourceManager)
 	{
 		m_ResourceManager->Shutdown();
 		delete m_ResourceManager;
 		m_ResourceManager = nullptr;
 	}
+
+	m_Life = 2;
+	m_Bomb = 5;
+	m_Score = 0;
+	m_GameOver = false;
+	m_Pause = false;
 }
 
 void Level1::Update(DWORD delta)
 {
 	m_Frame += delta;
 
+	if (m_Pause)
+		return;
+
 	// 소행성 스폰
 	SpawnAsteroids();
 
 	// 플레이어 업데이트 및 생사 검사
 	m_Player->Update(delta);
-	if (m_Player->IsDead())
-	{
-		if (!m_GameOver)
-			MessageBeep(0);
-
+	if (m_Player->IsDead()) {
 		m_GameOver = true;
+		m_Btn->SetEnabled();
 	}
 
 	int playerX = m_Player->GetX();
@@ -259,7 +328,10 @@ void Level1::Update(DWORD delta)
 		(*itr)->Update(delta);
 
 		if ((*itr)->IsDead())
+		{
+			delete *itr;
 			itr = m_Asteroid.erase(itr);
+		}
 		else
 			itr++;
 	}
@@ -279,14 +351,24 @@ void Level1::Render()
 
 	m_Player->Render();
 
-	for (std::vector<GUIText*>::iterator itr = m_Text.begin(); itr != m_Text.end(); itr++)
+	if (m_GUIInitialized)
 	{
-		(*itr)->Render();
-	}
+		for (int i = 0; i < ARRAYSIZE(m_Text); i++)
+		{
+			m_Text[i]->Render();
+		}
 
-	for (std::vector<GUIStatic*>::iterator itr = m_Static.begin(); itr != m_Static.end(); itr++)
-	{
-		(*itr)->Render();
+		for (int i = 0; i < ARRAYSIZE(m_Static); i++)
+		{
+			m_Static[i]->Render();
+		}
+
+		if (m_Pause)
+			m_PauseText->Render();
+		if (m_GameOver)
+			m_GameOverText->Render();
+		if (!m_Btn->IsDisabled())
+			m_Btn->Render();
 	}
 }
 
@@ -295,10 +377,58 @@ void Level1::OnMouseMessage(UINT message, LPARAM lParam)
 	switch (message)
 	{
 	case WM_MOUSEMOVE:
-		int mousePosX = GET_X_LPARAM(lParam);
-		int mousePosY = GET_Y_LPARAM(lParam);
+		m_MouseX = GET_X_LPARAM(lParam);
+		m_MouseY = GET_Y_LPARAM(lParam);
 
-		m_Player->SetPosition(mousePosX, mousePosY);
+		m_Player->SetPosition(m_MouseX, m_MouseY);
+
+		if (m_GUIInitialized)
+		{
+			// hover or pressed 상태 모두 해제 후 Hovered 상태인 버튼만 찾아 SetHovered
+			if (!m_Btn->IsPressed() && !m_Btn->IsDisabled())
+			{
+				m_Btn->SetNormal();
+			}
+
+			if (m_Btn->IsIn(m_MouseX, m_MouseY))
+			{
+				if (!m_Btn->IsPressed() && !m_Btn->IsDisabled())
+				{
+					m_Btn->SetHovered();
+				}
+			}
+		}
+		break;
+	case WM_LBUTTONDOWN:
+		if (m_GUIInitialized)
+		{
+			if (m_Btn->IsIn(m_MouseX, m_MouseY))
+			{
+				if (!m_Btn->IsDisabled())
+				{
+					m_Btn->SetPressed();
+				}
+			}
+		}
+		break;
+	case WM_LBUTTONUP:
+		if (m_GUIInitialized)
+		{
+			if (m_Btn->IsIn(m_MouseX, m_MouseY))
+			{
+				if (m_Btn->IsPressed() && !m_Btn->IsDisabled())
+				{
+					m_CallBackMenuLevel();
+					break;
+				}
+			}
+
+			// 클릭이 무효라면 버튼의 상태 해제
+			if (!m_Btn->IsDisabled())
+			{
+				m_Btn->SetNormal();
+			}
+		}
 		break;
 	}
 }
@@ -315,8 +445,26 @@ void Level1::OnKeyboardMessage(WPARAM wParam)
 		}
 		break;
 	case VK_ESCAPE:
-		if (m_CallBackMenuLevel)
-			m_CallBackMenuLevel();
+		if (m_GameOver)
+		{
+			if (m_CallBackMenuLevel)
+				m_CallBackMenuLevel();
+		}
+		else
+		{
+			if (!m_Pause)		// Pause
+			{
+				GetCursorPos(&m_CursorPos);
+				m_Pause = true;
+				m_Btn->SetEnabled();
+			}
+			else				// UnPause
+			{
+				SetCursorPos(m_CursorPos.x, m_CursorPos.y);
+				m_Pause = false;
+				m_Btn->SetDisabled();
+			}
+		}
 	}
 }
 

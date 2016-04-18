@@ -11,6 +11,7 @@ class GameController
 private:
 	bool CreateLevels();
 
+	HWND				m_hWnd;
 	Direct2DManager*	m_Direct2DManager;
 	GameLevel*			m_Levels[NUMBER_OF_LEVELS];
 	bool				m_IsLevelLoaded[NUMBER_OF_LEVELS];
@@ -30,6 +31,7 @@ public:
 
 	bool LoadMenuLevel();
 	bool LoadNextLevel();
+	void ExitGame();
 
 	void OnMouseMessage(HWND hWnd, UINT message, LPARAM lParam);
 	void OnKeyboardMessage(HWND hWnd, WPARAM wParam);

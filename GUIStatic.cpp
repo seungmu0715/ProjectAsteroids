@@ -17,8 +17,8 @@ void GUIStatic::Render()
 	if (m_Animated)
 	{
 		int frame = (m_Frame++ / 4) % 4;
-		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, frame);
+		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, frame, 1.0f);
 	}
 	else
-		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, 0);
+		m_Sprite->Draw(m_PosX, m_PosY, m_Size, 0, 0, 1.0f);
 }

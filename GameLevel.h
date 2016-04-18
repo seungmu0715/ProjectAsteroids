@@ -2,28 +2,28 @@
 #include <functional>
 #include <d2d1_2.h>
 #include "ResourceManager.h"
-#include "GUIStatic.h"
-#include "GUIText.h"
+#include "GUIButton.h"
 
 typedef std::function<void()> LoadMenuLevel;
 typedef std::function<void()> LoadNextLevel;
+typedef std::function<void()> ExitGame;
 
 class GameLevel
 {
 protected:
+	HWND					m_hWnd;
 	ID2D1HwndRenderTarget*	m_RenderTarget;
 	IDWriteTextFormat*		m_TextFormat;
 
 	ResourceManager*		m_ResourceManager;
-	std::vector<GUIStatic*>	m_Static;
-	std::vector<GUIText*>	m_Text;
 	
 	RECT					m_Rect;
 	LoadMenuLevel			m_CallBackMenuLevel;
 	LoadNextLevel			m_CallBackNextLevel;
+	ExitGame				m_CallBackExitGame;
 
 public:
-	virtual bool Load(ID2D1HwndRenderTarget* renderTarget, RECT rect, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel) = 0;
+	virtual bool Load(HWND hWnd, ID2D1HwndRenderTarget * renderTarget, LoadMenuLevel loadMenuLevel, LoadNextLevel loadNextLevel, ExitGame exitGame) = 0;
 	virtual void UnLoad() = 0;
 	virtual void Update(DWORD delta) = 0;
 	virtual void Render() = 0;

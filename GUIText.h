@@ -16,10 +16,14 @@ private:
 	wchar_t*				m_Text;
 
 public:
+	void Initialize(ID2D1HwndRenderTarget* renderTarget, IDWriteTextFormat* textFormat, int x, int y, int length, D2D1::ColorF::Enum color, wchar_t* text);
 	void Initialize(ID2D1HwndRenderTarget* renderTarget, IDWriteTextFormat* textFormat, int x, int y, int length, D2D1::ColorF::Enum color);
 	void Render();
 
+	RECT GetRect();
+
 	void SetText(int value);
 	void SetText(wchar_t* text);
+	void SetColor(D2D1::ColorF::Enum color);
 };
 
