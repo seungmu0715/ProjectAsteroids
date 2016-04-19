@@ -25,10 +25,10 @@ private:
 	GUIText*					m_GameOverText;
 	GUIButton*					m_Btn;
 
-	int							m_Life, m_Bomb, m_Score;
+	int							m_ShieldRecharge, m_Bomb, m_Score;
 
 	int							m_NumberOfAsteroid;
-	int							m_Frame;
+	int							m_Difficulty;
 	int							m_MouseX, m_MouseY;
 
 	POINT						m_CursorPos;
@@ -46,5 +46,6 @@ public:
 
 	virtual void OnMouseMessage(UINT message, LPARAM lParam) override;
 	virtual void OnKeyboardMessage(WPARAM wParam) override;
+	virtual void OnTimer() override;
 };
 

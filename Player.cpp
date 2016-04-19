@@ -2,6 +2,17 @@
 #include "Player.h"
 
 
+template <typename T>
+void Player::ClearVector(std::vector<T*>* vector)
+{
+	for (std::vector<T*>::iterator itr = vector->begin(); itr != vector->end();)
+	{
+		delete *itr;
+		itr = vector->erase(itr);
+	}
+	vector->clear();
+}
+
 void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 {
 	m_RenderTarget = renderTarget;
@@ -12,11 +23,18 @@ void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 	m_Duration = 1000;
 	m_Radius = IMAGE_SIZE * 0.5f * 0.5f;
 	m_IsDead = false;
-	m_IsDead = false;
+	m_IsInvincible = false;
+	m_IsLoopValid = false;
+
+	m_InvincibleTimer = 0;
+	m_ShieldRechargeTimer = 0;
+	m_Bomb = 5;
+	m_BombExplosionRadius = 300.0f;
 
 	m_Frame = 0;
 
-	m_RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &m_Brush);
+	m_RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &m_TailBrush);
+	m_RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Cyan), &m_ShockWaveBrush);
 }
 
 void Player::Update(DWORD delta)
@@ -34,15 +52,23 @@ void Player::Update(DWORD delta)
 	}
 
 	// Loop의 고리를 조여들게 한다. 끝까지 조여진 Loop는 삭제한다
-	for (std::vector<Loop*>::iterator itr = m_Loop.begin(); itr != m_Loop.end();)
+	for (std::vector<Loop*>::iterator itr = m_Loop.begin(); itr != m_Loop.end(); itr++)
 	{
 		if ((*itr)->Update(delta))
 		{
-			delete *itr;
-			itr = m_Loop.erase(itr);
+			ClearVector(&m_Loop);
+			break;
 		}
-		else
-			itr++;
+	}
+
+	// Shock wave가 퍼져나가게 한다. 끝까지 퍼진 Shock wave는 삭제한다
+	for (std::vector<Loop*>::iterator itr = m_ShockWave.begin(); itr != m_ShockWave.end(); itr++)
+	{
+		if ((*itr)->Update(delta))
+		{
+			ClearVector(&m_ShockWave);
+			break;
+		}
 	}
 
 	if (m_IsDead)
@@ -202,22 +228,35 @@ void Player::Render()
 	
 	frame = (m_Frame++ / 4) % 4;
 
+	// Path
 	for (std::vector<Path*>::iterator itr = m_Path.begin(); itr != m_Path.end() && std::next(itr) != m_Path.end(); itr++)
 	{
-		m_RenderTarget->DrawLine((*itr)->GetPosition(), (*std::next(itr))->GetPosition(), m_Brush);
+		m_RenderTarget->DrawLine((*itr)->GetPosition(), (*std::next(itr))->GetPosition(), m_TailBrush);
 	}
 
+	// Loop
 	for (std::vector<Loop*>::iterator itr = m_Loop.begin(); itr != m_Loop.end() && std::next(itr) != m_Loop.end(); itr++)
 	{
-		m_RenderTarget->DrawLine((*itr)->GetPosition(), (*std::next(itr))->GetPosition(), m_Brush);
+		m_RenderTarget->DrawLine((*itr)->GetPosition(), (*std::next(itr))->GetPosition(), m_TailBrush);
 	}
 
 	// 닫힌 원을 만들기 위해 Loop의 마지막 원소부터 첫번째 원소로 이어지는 선을 추가로 그린다
 	if (m_Loop.size() > 2)
-		m_RenderTarget->DrawLine(m_Loop.back()->GetPosition(), m_Loop.front()->GetPosition(), m_Brush);
+		m_RenderTarget->DrawLine(m_Loop.back()->GetPosition(), m_Loop.front()->GetPosition(), m_TailBrush);
 
-	if (!m_IsDying)
-		m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 0, frame, 1.0f);
+	// Shock wave
+	for (std::vector<Loop*>::iterator itr = m_ShockWave.begin(); itr != m_ShockWave.end() && std::next(itr) != m_ShockWave.end(); itr++)
+	{
+		m_RenderTarget->DrawLine((*itr)->GetPosition(), (*std::next(itr))->GetPosition(), m_ShockWaveBrush, 20.0f);
+	}
+
+	// 닫힌 원을 만들기 위해 Shock wave의 마지막 원소부터 첫번째 원소로 이어지는 선을 추가로 그린다
+	if (m_ShockWave.size() > 2)
+		m_RenderTarget->DrawLine(m_ShockWave.back()->GetPosition(), m_ShockWave.front()->GetPosition(), m_ShockWaveBrush, 20.0f);
+
+
+	if (m_State != 2)
+		m_Sprite->Draw(m_PosX, m_PosY, 0.5f, m_State, frame, 1.0f);
 	else
 	{
 		if (!m_IsDead)
@@ -225,38 +264,28 @@ void Player::Render()
 			if (frame == 3)
 				m_IsDead = true;
 
-			m_Sprite->Draw(m_PosX, m_PosY, 0.5f, 1, frame, 1.0f);
+			m_Sprite->Draw(m_PosX, m_PosY, 0.5f, m_State, frame, 1.0f);
 		}
 	}
 }
 
 void Player::Shutdown()
 {
-	for (std::vector<Loop*>::iterator itr = m_Loop.begin(); itr != m_Loop.end();)
+	if (m_ShockWaveBrush)
 	{
-		delete *itr;
-		itr = m_Loop.erase(itr);
+		m_ShockWaveBrush->Release();
+		m_ShockWaveBrush = nullptr;
 	}
-	m_Loop.clear();
 
-	for (std::vector<Path*>::iterator itr = m_Path.begin(); itr != m_Path.end();)
+	if (m_TailBrush)
 	{
-		delete *itr;
-		itr = m_Path.erase(itr);
+		m_TailBrush->Release();
+		m_TailBrush = nullptr;
 	}
-	m_Path.clear();
-}
 
-std::vector<Loop*>::iterator Player::GetLoopBegin()
-{
-	std::vector<Loop*>::iterator itr = m_Loop.begin();
-	return itr;
-}
-
-std::vector<Loop*>::iterator Player::GetLoopEnd()
-{
-	std::vector<Loop*>::iterator itr = m_Loop.end();
-	return itr;
+	ClearVector(&m_ShockWave);
+	ClearVector(&m_Loop);
+	ClearVector(&m_Path);
 }
 
 void Player::SetPosition(int x, int y)
@@ -265,11 +294,100 @@ void Player::SetPosition(int x, int y)
 	m_ReservY = y;
 }
 
-void Player::SetDead()
+void Player::SetDamage()
 {
-	if (!m_IsDying)
+	if (!m_IsInvincible)
 	{
-		m_Frame = 0;
-		m_IsDying = true;
+		m_State++;
+
+		if (m_State == 1)
+		{
+			m_IsInvincible = true;
+			m_InvincibleTimer = 5;			// 실드가 파괴되고 약 0.5초간 무적 상태를 줘 순식간에 파괴되는 현상을 방지
+			m_ShieldRechargeTimer = 100;		// 실드는 파괴되고 약 10초 후에 다시 재생됨
+		}
+
+		else if (m_State == 2)
+		{
+			m_IsInvincible = true;		// 무적이 아니라 더 이상의 Damage 판정을 막기 위함
+			m_Frame = 0;
+
+			UseBomb();
+		}
 	}
+}
+
+void Player::UseBomb()
+{
+	if (!m_IsLoopValid)
+	{
+		Loop* newLoop;
+		D2D1_POINT_2F p1;
+		D2D1_POINT_2F p2[60];
+		const int numberOfVertex = ARRAYSIZE(p2);
+
+		m_Bomb--;
+
+		// Loop를 구성할 좌표를 원의 방정식을 토대로 생성한다
+		/*
+			x = a + r cos t
+			y = b + r sin t
+			t는 라디안값으로 (2ㅠ / 꼭짓점 개수) * 꼭짓점 인덱스와 같다
+		*/
+		p1.x = m_PosX;
+		p1.y = m_PosY;
+
+		for (int i = 0; i < numberOfVertex; i++)
+		{
+			float t = (2.0f * M_PI / (float)numberOfVertex) * i;
+			p2[i].x = p1.x + m_BombExplosionRadius * cos(t);
+			p2[i].y = p1.y + m_BombExplosionRadius * sin(t);
+		}
+
+		// 밖으로 퍼지는 형태의 Shock wave를 먼저 만든다. 실제 효과는 없고 시각적 효과를 위함이다
+		// 초기 위치는 p1이며 목적지는 p2이다
+		for (int i = 0; i < numberOfVertex; i++)
+		{
+			newLoop = new Loop();
+			newLoop->Initialize(p1);
+			newLoop->SetDestination(p2[i]);
+			m_ShockWave.push_back(newLoop);
+		}
+
+		// 안으로 쪼그라드는 형태의 Loop를 추가로 만든다. 실제로 소행성을 파괴하는 효과를 낸다
+		// 초기 위치는 p2이며 목적지는 p1이다
+		for (int i = 0; i < numberOfVertex; i++)
+		{
+			newLoop = new Loop();
+			newLoop->Initialize(p2[i]);
+			newLoop->SetDestination(p1);
+			m_Loop.push_back(newLoop);
+		}
+
+		m_IsLoopValid = true;
+	}
+}
+
+void Player::OnTimer()
+{
+	m_InvincibleTimer--;
+	m_ShieldRechargeTimer--;
+
+	if (m_InvincibleTimer == 0)
+	{
+		m_IsInvincible = false;
+	}
+
+	if (m_State == 1)
+	{
+		if (m_ShieldRechargeTimer == 0)
+		{
+			m_State = 0;
+		}
+	}
+
+	if (m_InvincibleTimer < 0)
+		m_InvincibleTimer = 0;
+	if (m_ShieldRechargeTimer < 0)
+		m_ShieldRechargeTimer = 0;
 }

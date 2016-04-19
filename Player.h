@@ -7,21 +7,30 @@
 class Player
 {
 private:
+	template <typename T>
+	void ClearVector(std::vector<T*>* vector);
+
 	ID2D1HwndRenderTarget*	m_RenderTarget;
 	Sprite*					m_Sprite;
 
 	std::vector<Path*>		m_Path;
-	std::vector<Loop*>		m_Loop;
-	ID2D1SolidColorBrush*	m_Brush;
+	std::vector<Loop*>		m_Loop, m_ShockWave;
+	ID2D1SolidColorBrush	*m_TailBrush, *m_ShockWaveBrush;
 	int						m_PosX, m_PosY;
 	int						m_ReservX, m_ReservY;
 	int						m_Duration;
 	float					m_Radius;
-	bool					m_IsDying;
+
 	bool					m_IsDead;
+	bool					m_IsInvincible;
 	bool					m_IsLoopValid;
+	int						m_InvincibleTimer;
+	int						m_ShieldRechargeTimer;
+	int						m_Bomb;
+	float					m_BombExplosionRadius;
 
 	int						m_Frame;
+	int						m_State;	// 0=normal; 1=without shield; 2=dying;
 
 public:
 	void Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite* sprite);
@@ -29,17 +38,22 @@ public:
 	void Render();
 	void Shutdown();
 
-	void InvalidateLoop() { m_IsLoopValid = false; };
+	int GetX()										{ return m_PosX; };
+	int GetY()										{ return m_PosY; };
+	float GetRadius()								{ return m_Radius; };
+	bool IsDead()									{ return m_IsDead; };
+	bool IsLoopValid()								{ return m_IsLoopValid; };
+	std::vector<Loop*>::iterator GetLoopBegin()		{ return m_Loop.begin(); };
+	std::vector<Loop*>::iterator GetLoopEnd()		{ return m_Loop.end(); };
+	int GetBomb()									{ return m_Bomb; };
+	int GetInvinsibleTimer()						{ return m_InvincibleTimer; };
+	int GetShieldRechargeTimer()					{ return m_ShieldRechargeTimer; };
 
-	int GetX() { return m_PosX; };
-	int GetY() { return m_PosY; };
-	float GetRadius() { return m_Radius; };
-	bool IsDead() { return m_IsDead; };
-	bool IsLoopValid() { return m_IsLoopValid; };
-	std::vector<Loop*>::iterator GetLoopBegin();
-	std::vector<Loop*>::iterator GetLoopEnd();
-
+	void InvalidateLoop()							{ m_IsLoopValid = false; };
 	void SetPosition(int x, int y);
-	void SetDead();
+	void SetDamage();
+	void UseBomb();
+
+	void OnTimer();
 };
 

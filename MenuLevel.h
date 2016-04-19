@@ -21,5 +21,6 @@ public:
 
 	virtual void OnMouseMessage(UINT message, LPARAM lParam) override;
 	virtual void OnKeyboardMessage(WPARAM wParam) override { ; };
+	virtual void OnTimer() override { ; };
 };
 

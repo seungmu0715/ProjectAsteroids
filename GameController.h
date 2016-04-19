@@ -35,5 +35,6 @@ public:
 
 	void OnMouseMessage(HWND hWnd, UINT message, LPARAM lParam);
 	void OnKeyboardMessage(HWND hWnd, WPARAM wParam);
+	void OnTimer();
 };
 

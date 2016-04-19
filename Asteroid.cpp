@@ -23,7 +23,7 @@ void Asteroid::Update(DWORD delta)
 	m_PosX += (m_DeltaX / 10) * delta;
 	m_PosY += (m_DeltaY / 10) * delta;
 
-	if ((SCREEN_WIDTH < m_PosX || m_PosX < 0) || (SCREEN_HEIGHT < m_PosY || m_PosY < 0))
+	if ((SCREEN_WIDTH + IMAGE_SIZE < m_PosX || m_PosX < -IMAGE_SIZE) || (SCREEN_HEIGHT + IMAGE_SIZE < m_PosY || m_PosY < -IMAGE_SIZE))
 		SetDead();
 }
 

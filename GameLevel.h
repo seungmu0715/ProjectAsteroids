@@ -30,5 +30,6 @@ public:
 
 	virtual void OnMouseMessage(UINT message, LPARAM lParam) = 0;
 	virtual void OnKeyboardMessage(WPARAM wParam) = 0;
+	virtual void OnTimer() = 0;
 };
 

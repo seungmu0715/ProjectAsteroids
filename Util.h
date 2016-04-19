@@ -2,6 +2,9 @@
 #include <cmath>
 #include <vector>
 #include <numeric>
+
+#define _USE_MATH_DEFINES
+
 class Util
 {
 public:

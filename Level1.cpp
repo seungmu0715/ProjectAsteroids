@@ -8,7 +8,7 @@ bool Level1::InitializeGUI()
 	IDWriteFactory2* writeFactory;
 	const WCHAR msc_FontName[] = L"Verdana";
 	const FLOAT msc_FontSize = 20.0f;
-	const float margin = IMAGE_SIZE / 4;
+	const int margin = IMAGE_SIZE / 4;
 
 	result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), reinterpret_cast<IUnknown **>(&writeFactory));
 	if (FAILED(result))
@@ -42,7 +42,7 @@ bool Level1::InitializeGUI()
 	// 목숨
 	m_Text[0] = new GUIText();
 	m_Text[0]->Initialize(m_RenderTarget, m_TextFormat, IMAGE_SIZE * 2, IMAGE_SIZE / 2, 1, D2D1::ColorF::White);
-	m_Text[0]->SetText(m_Life);
+	m_Text[0]->SetText(m_ShieldRecharge);
 
 	// 폭탄
 	m_Text[1] = new GUIText();
@@ -115,7 +115,8 @@ void Level1::SpawnAsteroids()
 {
 	int numberOfCurrentAsteroids = m_Asteroid.size();
 	
-	for (int i = 0; i < m_NumberOfAsteroid - numberOfCurrentAsteroids; i++)
+	//for (int i = 0; i < m_NumberOfAsteroid - numberOfCurrentAsteroids; i++)
+	if (m_NumberOfAsteroid != m_Asteroid.size())
 	{
 		Asteroid* newAsteroid = new Asteroid();
 
@@ -127,17 +128,25 @@ void Level1::SpawnAsteroids()
 		if (rand() % 2 == 0)
 		{
 			fromX = (rand() % 2) * (m_Rect.right - m_Rect.left);
+			if (fromX == 0)
+				fromX -= IMAGE_SIZE / 2;
+			else
+				fromX += IMAGE_SIZE / 2;
 			fromY = rand() % (m_Rect.bottom - m_Rect.top);
 		}
 		else
 		{
 			fromX = rand() % (m_Rect.right - m_Rect.left);
 			fromY = (rand() % 2) * (m_Rect.bottom - m_Rect.top);
+			if (fromY == 0)
+				fromY -= IMAGE_SIZE / 2;
+			else
+				fromY += IMAGE_SIZE / 2;
 		}
 			
 		int toX = (m_Rect.right - m_Rect.left) / 2;
 		int toY = (m_Rect.bottom - m_Rect.top) / 2;
-		float size = (float)(3 + rand() % 3) / 10.0f;
+		float size = (float)(2 + rand() % 3) / 10.0f;
 
 		newAsteroid->Initialize(m_ResourceManager->GetSprite(buffer), fromX, fromY, toX, toY, size);
 		m_Asteroid.push_back(newAsteroid);
@@ -151,9 +160,7 @@ Level1::Level1()
 
 	m_Player = nullptr;
 	m_NumberOfAsteroid = 15;
-	m_Frame = 0;
-	m_Life = 2;
-	m_Bomb = 5;
+	m_Difficulty = 0;
 	m_Score = 0;
 
 	m_GUIInitialized = false;
@@ -228,8 +235,8 @@ void Level1::UnLoad()
 		m_ResourceManager = nullptr;
 	}
 
-	m_Life = 2;
-	m_Bomb = 5;
+	m_NumberOfAsteroid = 15;
+	m_Difficulty = 0;
 	m_Score = 0;
 	m_GameOver = false;
 	m_Pause = false;
@@ -237,13 +244,10 @@ void Level1::UnLoad()
 
 void Level1::Update(DWORD delta)
 {
-	m_Frame += delta;
+	bool doOnce = false;
 
 	if (m_Pause)
 		return;
-
-	// 소행성 스폰
-	SpawnAsteroids();
 
 	// 플레이어 업데이트 및 생사 검사
 	m_Player->Update(delta);
@@ -264,6 +268,7 @@ void Level1::Update(DWORD delta)
 		m_LoopEnd = m_Player->GetLoopEnd();
 	}
 	
+	int destroyedAsteorid = 0;		// 한 번에 파괴한 소행성의 개수
 	for (std::list<Asteroid*>::iterator itr = m_Asteroid.begin(); itr != m_Asteroid.end();)
 	{
 		// 이미 파괴 진행중인 소행성은 건너뛴다
@@ -276,10 +281,10 @@ void Level1::Update(DWORD delta)
 		int x = (*itr)->GetX();
 		int y = (*itr)->GetY();
 
-		// 플레이어와 충돌 시 플레이어를 죽인다
+		// 플레이어와 충돌 시 플레이어에게 데미지를 입힌다
 		if (Util::GetDistance(playerX, playerY, x, y) <= playerRadius + (*itr)->GetRadius())
 		{
-			m_Player->SetDead();
+			m_Player->SetDamage();
 		}
 		
 		// 루프가 존재하는 경우 루프와의 충돌 검사를 추가로 수행한다
@@ -303,15 +308,15 @@ void Level1::Update(DWORD delta)
 				if (denominator == 0)			// 평행 또는 일치 상태
 					continue;
 				
-				int px = (((Pn_0.x * Pn_1.y - Pn_0.y * Pn_1.x) * (outer - x)) - ((Pn_0.x - Pn_1.x) * (outer * y - outer * x))) / denominator;
-				int py = (((Pn_0.x * Pn_1.y - Pn_0.y * Pn_1.x) * (outer - y)) - ((Pn_0.y - Pn_1.y) * (outer * y - outer * x))) / denominator;
+				int px = (int)((((Pn_0.x * Pn_1.y - Pn_0.y * Pn_1.x) * (outer - x)) - ((Pn_0.x - Pn_1.x) * (outer * y - outer * x))) / denominator);
+				int py = (int)((((Pn_0.x * Pn_1.y - Pn_0.y * Pn_1.x) * (outer - y)) - ((Pn_0.y - Pn_1.y) * (outer * y - outer * x))) / denominator);
 				
 				// 교점 좌표가 유효한 점이면 flag를 toggle한다
-				int minX = Util::GetMax(Util::GetMin(Pn_0.x, Pn_1.x), Util::GetMin(outer, x));
-				int maxX = Util::GetMin(Util::GetMax(Pn_0.x, Pn_1.x), Util::GetMax(outer, x));
+				int minX = (int)Util::GetMax(Util::GetMin(Pn_0.x, Pn_1.x), Util::GetMin((float)outer, (float)x));
+				int maxX = (int)Util::GetMin(Util::GetMax(Pn_0.x, Pn_1.x), Util::GetMax((float)outer, (float)x));
 
-				int minY = Util::GetMax(Util::GetMin(Pn_0.y, Pn_1.y), Util::GetMin(outer, y));
-				int maxY = Util::GetMin(Util::GetMax(Pn_0.y, Pn_1.y), Util::GetMax(outer, y));
+				int minY = (int)Util::GetMax(Util::GetMin(Pn_0.y, Pn_1.y), Util::GetMin((float)outer, (float)y));
+				int maxY = (int)Util::GetMin(Util::GetMax(Pn_0.y, Pn_1.y), Util::GetMax((float)outer, (float)y));
 
 				if ((minX <= px && px <= maxX) && (minY <= py && py <= maxY))
 					flag = !flag;
@@ -320,7 +325,7 @@ void Level1::Update(DWORD delta)
 			// 교점의 수가 홀수면 충돌로 판정해 파괴한다
 			if (flag) {
 				(*itr)->SetDead();
-				m_Text[2]->SetText(++m_Score);
+				destroyedAsteorid++;
 			}
 		}
 
@@ -336,10 +341,30 @@ void Level1::Update(DWORD delta)
 			itr++;
 	}
 
+	// 파괴한 소행성 개수 2개당 1만큼 최대 소행성 개수를 증가시킨다
+	// 파괴한 소행성을 점수로 변환한다. 1개당 총 먹은개수만큼의 점수 부여함. ex) 3개 먹으면 3점씩 3개
+	if (destroyedAsteorid > 0)
+	{
+		if (m_NumberOfAsteroid < 100)
+			m_NumberOfAsteroid += destroyedAsteorid / 2;
+
+		m_Score += pow(destroyedAsteorid, 2);
+		m_Text[2]->SetText(m_Score);
+	}
+
 	// Loop 생성 후 처음 호출된 Update에서만 파괴 동작을 수행하고, 그 이후부터는 파괴 검사를 하지 않는다
 	// Loop가 줄어드는 속도보다 소행성의 속도가 더 빠른 경우 안쪽으로 빨려들어가 파괴되는 현상을 방지하기 위함
 	if (validLoop)
 		m_Player->InvalidateLoop();
+
+	// GUI 업데이트
+	if (!m_Player->IsDead())
+	{
+		m_ShieldRecharge = 100 - m_Player->GetShieldRechargeTimer();
+		m_Bomb = m_Player->GetBomb();
+		m_Text[0]->SetText(m_ShieldRecharge);
+		m_Text[1]->SetText(m_Bomb);
+	}
 }
 
 void Level1::Render()
@@ -439,9 +464,9 @@ void Level1::OnKeyboardMessage(WPARAM wParam)
 	{
 	case VK_SPACE:
 		// 폭탄
-		if (m_Bomb > 0)
+		if (m_Player->GetBomb() > 0)
 		{
-			m_Text[1]->SetText(--m_Bomb);
+			m_Player->UseBomb();
 		}
 		break;
 	case VK_ESCAPE:
@@ -466,5 +491,23 @@ void Level1::OnKeyboardMessage(WPARAM wParam)
 			}
 		}
 	}
+}
+
+void Level1::OnTimer()
+{
+	// 5초에 한번씩 소행성 최대 개수 1 증가
+	if (m_NumberOfAsteroid < 100)
+	{
+		if (m_Difficulty++ > 50)
+		{
+			m_Difficulty = 0;
+			m_NumberOfAsteroid++;
+		}
+	}
+
+	// 소행성 스폰
+	SpawnAsteroids();
+
+	m_Player->OnTimer();
 }
 

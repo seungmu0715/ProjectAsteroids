@@ -147,6 +147,9 @@ LRESULT Main::MessageHandler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 {
 	switch (message)
 	{
+	case WM_CREATE:
+		SetTimer(hWnd, 0, 100, NULL);
+		break;
 	case WM_MOUSEMOVE:
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
@@ -157,6 +160,9 @@ LRESULT Main::MessageHandler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		break;
 	case WM_KEYDOWN:
 		m_GameController->OnKeyboardMessage(m_hWnd, wParam);
+		break;
+	case WM_TIMER:
+		m_GameController->OnTimer();
 		break;
 	case WM_PAINT:
 	{
@@ -171,6 +177,7 @@ LRESULT Main::MessageHandler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		break;
 	}
 	case WM_DESTROY:
+		KillTimer(hWnd, 0);
 		PostQuitMessage(0);
 		break;
 	default:

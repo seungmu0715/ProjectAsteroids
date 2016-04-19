@@ -184,3 +184,11 @@ void GameController::OnKeyboardMessage(HWND hWnd, WPARAM wParam)
 	m_Levels[m_CurrentLevel]->OnKeyboardMessage(wParam);
 }
 
+void GameController::OnTimer()
+{
+	// 공통 명령 처리
+
+	// 특정 레벨에 따른 특수 명령 처리
+	m_Levels[m_CurrentLevel]->OnTimer();
+}
+
