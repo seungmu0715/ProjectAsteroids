@@ -13,6 +13,46 @@ void Player::ClearVector(std::vector<T*>* vector)
 	vector->clear();
 }
 
+void Player::EmitShockWave()
+{
+	D2D1_POINT_2F* destination = (D2D1_POINT_2F*)malloc(sizeof(D2D1_POINT_2F) * NUMBER_OF_VERTEX);
+
+	EmitShockWave(destination);
+
+	free(destination);
+}
+
+void Player::EmitShockWave(D2D1_POINT_2F * destination)
+{
+	Loop* newLoop;
+	D2D1_POINT_2F origin;
+
+	origin.x = m_PosX;
+	origin.y = m_PosY;
+
+	// 원의 방정식을 토대로 좌표를 생성한다
+	/*
+		x = a + r cos t
+		y = b + r sin t
+		t는 라디안값으로 (2ㅠ / 꼭짓점 개수) * 꼭짓점 인덱스와 같다
+	*/
+
+	for (int i = 0; i < NUMBER_OF_VERTEX; i++)
+	{
+		float t = (2.0f * M_PI / (float)NUMBER_OF_VERTEX) * i;
+		destination[i].x = origin.x + m_BombExplosionRadius * cos(t);
+		destination[i].y = origin.y + m_BombExplosionRadius * sin(t);
+	}
+
+	for (int i = 0; i < NUMBER_OF_VERTEX; i++)
+	{
+		newLoop = new Loop();
+		newLoop->Initialize(origin);
+		newLoop->SetDestination(destination[i]);
+		m_ShockWave.push_back(newLoop);
+	}
+}
+
 void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 {
 	m_RenderTarget = renderTarget;
@@ -28,7 +68,7 @@ void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 
 	m_InvincibleTimer = 0;
 	m_ShieldRechargeTimer = 0;
-	m_Bomb = 5;
+	m_Bomb = 2;
 	m_BombExplosionRadius = 300.0f;
 
 	m_Frame = 0;
@@ -303,7 +343,7 @@ void Player::SetDamage()
 		if (m_State == 1)
 		{
 			m_IsInvincible = true;
-			m_InvincibleTimer = 5;			// 실드가 파괴되고 약 0.5초간 무적 상태를 줘 순식간에 파괴되는 현상을 방지
+			m_InvincibleTimer = 2;			// 실드가 파괴되고 약 0.2초간 무적 상태를 줘 순식간에 파괴되는 현상을 방지
 			m_ShieldRechargeTimer = 100;		// 실드는 파괴되고 약 10초 후에 다시 재생됨
 		}
 
@@ -312,7 +352,7 @@ void Player::SetDamage()
 			m_IsInvincible = true;		// 무적이 아니라 더 이상의 Damage 판정을 막기 위함
 			m_Frame = 0;
 
-			UseBomb();
+			EmitShockWave();
 		}
 	}
 }
@@ -322,45 +362,26 @@ void Player::UseBomb()
 	if (!m_IsLoopValid)
 	{
 		Loop* newLoop;
-		D2D1_POINT_2F p1;
-		D2D1_POINT_2F p2[60];
-		const int numberOfVertex = ARRAYSIZE(p2);
+		D2D1_POINT_2F origin;
+		D2D1_POINT_2F destination[NUMBER_OF_VERTEX];
 
 		m_Bomb--;
 
-		// Loop를 구성할 좌표를 원의 방정식을 토대로 생성한다
-		/*
-			x = a + r cos t
-			y = b + r sin t
-			t는 라디안값으로 (2ㅠ / 꼭짓점 개수) * 꼭짓점 인덱스와 같다
-		*/
-		p1.x = m_PosX;
-		p1.y = m_PosY;
+		origin.x = m_PosX;
+		origin.y = m_PosY;
 
-		for (int i = 0; i < numberOfVertex; i++)
-		{
-			float t = (2.0f * M_PI / (float)numberOfVertex) * i;
-			p2[i].x = p1.x + m_BombExplosionRadius * cos(t);
-			p2[i].y = p1.y + m_BombExplosionRadius * sin(t);
-		}
+		// Shock wave를 먼저 만든다. 실제 효과는 없고 시각적 효과를 위함이다
+		// 원점에서 밖을 향해 뻗어나간다
+		// Shock wave가 만든 좌표를 Loop도 사용할 것이므로 destination 배열에 값을 받아온다
+		EmitShockWave(destination);
 
-		// 밖으로 퍼지는 형태의 Shock wave를 먼저 만든다. 실제 효과는 없고 시각적 효과를 위함이다
-		// 초기 위치는 p1이며 목적지는 p2이다
-		for (int i = 0; i < numberOfVertex; i++)
+		// Loop를 추가로 만든다. 실제로 소행성을 파괴하는 효과를 낸다
+		// Shock wave와 반대로 밖에서 원점을 향해 빨려든다
+		for (int i = 0; i < NUMBER_OF_VERTEX; i++)
 		{
 			newLoop = new Loop();
-			newLoop->Initialize(p1);
-			newLoop->SetDestination(p2[i]);
-			m_ShockWave.push_back(newLoop);
-		}
-
-		// 안으로 쪼그라드는 형태의 Loop를 추가로 만든다. 실제로 소행성을 파괴하는 효과를 낸다
-		// 초기 위치는 p2이며 목적지는 p1이다
-		for (int i = 0; i < numberOfVertex; i++)
-		{
-			newLoop = new Loop();
-			newLoop->Initialize(p2[i]);
-			newLoop->SetDestination(p1);
+			newLoop->Initialize(destination[i]);
+			newLoop->SetDestination(origin);
 			m_Loop.push_back(newLoop);
 		}
 

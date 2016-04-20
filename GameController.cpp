@@ -141,7 +141,7 @@ bool GameController::LoadNextLevel()
 
 	m_IsLevelLoaded[++m_CurrentLevel] = true;
 
-	return m_Levels[m_CurrentLevel];
+	return true;
 }
 
 void GameController::ExitGame()

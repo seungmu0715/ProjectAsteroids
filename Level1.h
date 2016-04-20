@@ -11,7 +11,7 @@ class Level1 : public GameLevel
 private:
 	bool InitializeGUI();
 	void ShutdownGUI();
-	void SpawnAsteroids();
+	void SpawnAsteroids(bool isObstacle);
 	
 	IDWriteTextFormat*			m_LargeTextFormat;
 
@@ -29,6 +29,7 @@ private:
 
 	int							m_NumberOfAsteroid;
 	int							m_Difficulty;
+	int							m_ItemGenerateTimer;
 	int							m_MouseX, m_MouseY;
 
 	POINT						m_CursorPos;

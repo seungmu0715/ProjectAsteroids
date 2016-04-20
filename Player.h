@@ -7,8 +7,12 @@
 class Player
 {
 private:
+#define NUMBER_OF_VERTEX 60
+
 	template <typename T>
 	void ClearVector(std::vector<T*>* vector);
+	void EmitShockWave();
+	void EmitShockWave(D2D1_POINT_2F * destination);
 
 	ID2D1HwndRenderTarget*	m_RenderTarget;
 	Sprite*					m_Sprite;
@@ -53,6 +57,8 @@ public:
 	void SetPosition(int x, int y);
 	void SetDamage();
 	void UseBomb();
+	void IncreaseBomb()								{ m_Bomb++; };
+	void RechargeShield()							{ m_ShieldRechargeTimer = 1; };
 
 	void OnTimer();
 };

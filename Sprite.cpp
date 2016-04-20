@@ -29,7 +29,7 @@ void Sprite::Shutdown()
 	}
 }
 
-void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex, float opacity)
+void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex, float opacity, float rotation)
 {
 	float left, top, right, bottom;
 	left = IMAGE_SIZE * frameIndex;
@@ -37,13 +37,17 @@ void Sprite::Draw(int x, int y, float size, int actionIndex, int frameIndex, flo
 	right = left + IMAGE_SIZE - 1;
 	bottom = top + IMAGE_SIZE - 1;
 
+	m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(rotation, D2D1::Point2F((float)x, (float)y)));
+
 	x -= IMAGE_SIZE * size / 2;
 	y -= IMAGE_SIZE * size / 2;
-
+	
 	m_RenderTarget->DrawBitmap(m_Bitmap,
 		D2D1::RectF((FLOAT)x, (FLOAT)y, x + IMAGE_SIZE * size, y + IMAGE_SIZE * size),
 		opacity,		// Oppacity
 		D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
 		D2D1::RectF(left, top, right, bottom)		// src image rect
 		);
+
+	m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }

@@ -16,7 +16,7 @@ public:
 
 	void Initialize(int numberOfFrame, int NumberOfAction);
 	void Shutdown();
-	void Draw(int x, int y, float size, int actionIndex, int frameIndex, float opacity);
+	void Draw(int x, int y, float size, int actionIndex, int frameIndex, float opacity, float rotation = 0.0f);
 	ID2D1Bitmap** GetBitmap() { return &m_Bitmap; };
 };
 

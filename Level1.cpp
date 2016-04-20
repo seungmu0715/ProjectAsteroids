@@ -111,18 +111,30 @@ void Level1::ShutdownGUI()
 	}
 }
 
-void Level1::SpawnAsteroids()
+void Level1::SpawnAsteroids(bool isObstacle)
 {
 	int numberOfCurrentAsteroids = m_Asteroid.size();
 	
-	//for (int i = 0; i < m_NumberOfAsteroid - numberOfCurrentAsteroids; i++)
-	if (m_NumberOfAsteroid != m_Asteroid.size())
+	if (m_NumberOfAsteroid > m_Asteroid.size() || !isObstacle)
 	{
 		Asteroid* newAsteroid = new Asteroid();
+		float size;
+		int type;
 
 		wchar_t buffer[64];
 		wmemset(buffer, 0, 64);
-		swprintf_s(buffer, L"res\\asteroid%d.png", 1 + rand() % 2);
+		if (isObstacle)
+		{
+			size = (float)(3 + rand() % 2) / 10.0f;
+			type = -1;
+			swprintf_s(buffer, L"res\\asteroid%d.png", 1 + rand() % 2);
+		}
+		else
+		{
+			size = 1.0f;
+			type = rand() % 2;
+			swprintf_s(buffer, L"res\\item%d.png", 1 + type);
+		}
 
 		int fromX, fromY;
 		if (rand() % 2 == 0)
@@ -146,9 +158,8 @@ void Level1::SpawnAsteroids()
 			
 		int toX = (m_Rect.right - m_Rect.left) / 2;
 		int toY = (m_Rect.bottom - m_Rect.top) / 2;
-		float size = (float)(2 + rand() % 3) / 10.0f;
-
-		newAsteroid->Initialize(m_ResourceManager->GetSprite(buffer), fromX, fromY, toX, toY, size);
+		
+		newAsteroid->Initialize(m_ResourceManager->GetSprite(buffer), type, fromX, fromY, toX, toY, size);
 		m_Asteroid.push_back(newAsteroid);
 	}
 }
@@ -200,7 +211,7 @@ bool Level1::Load(HWND hWnd, ID2D1HwndRenderTarget * renderTarget, LoadMenuLevel
 		return false;
 
 	srand(time(NULL));
-	SpawnAsteroids();
+	SpawnAsteroids(false);
 
 	m_CursorPos.x = (m_Rect.right - m_Rect.left) / 2;
 	m_CursorPos.y = (m_Rect.bottom - m_Rect.top) / 2;
@@ -280,11 +291,16 @@ void Level1::Update(DWORD delta)
 
 		int x = (*itr)->GetX();
 		int y = (*itr)->GetY();
+		int type = (*itr)->GetType();
 
 		// 플레이어와 충돌 시 플레이어에게 데미지를 입힌다
-		if (Util::GetDistance(playerX, playerY, x, y) <= playerRadius + (*itr)->GetRadius())
+		// 아이템인 경우 충돌하지 않는다
+		if (type == -1)
 		{
-			m_Player->SetDamage();
+			if (Util::GetDistance(playerX, playerY, x, y) <= playerRadius + (*itr)->GetRadius())
+			{
+				m_Player->SetDamage();
+			}
 		}
 		
 		// 루프가 존재하는 경우 루프와의 충돌 검사를 추가로 수행한다
@@ -326,6 +342,20 @@ void Level1::Update(DWORD delta)
 			if (flag) {
 				(*itr)->SetDead();
 				destroyedAsteorid++;
+
+				// 아이템에 대한 특수 효과들
+				if (type != -1)
+				{
+					switch (type)
+					{
+					case 0:							// 폭탄 개수 증가
+						m_Player->IncreaseBomb();
+						break;
+					case 1:							// 보호막 즉시 충전
+						m_Player->RechargeShield();
+						break;
+					}
+				}
 			}
 		}
 
@@ -348,7 +378,7 @@ void Level1::Update(DWORD delta)
 		if (m_NumberOfAsteroid < 100)
 			m_NumberOfAsteroid += destroyedAsteorid / 2;
 
-		m_Score += pow(destroyedAsteorid, 2);
+		m_Score += (int)pow(destroyedAsteorid, 2);
 		m_Text[2]->SetText(m_Score);
 	}
 
@@ -505,8 +535,15 @@ void Level1::OnTimer()
 		}
 	}
 
+	// 10초에 한번씩 아이템 스폰
+	if (m_ItemGenerateTimer++ > 100)
+	{
+		m_ItemGenerateTimer = 0;
+		SpawnAsteroids(false);
+	}
+
 	// 소행성 스폰
-	SpawnAsteroids();
+	SpawnAsteroids(true);
 
 	m_Player->OnTimer();
 }
