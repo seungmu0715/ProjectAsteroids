@@ -61,6 +61,7 @@ void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 	m_ReservX = SCREEN_WIDTH / 2;
 	m_ReservY = SCREEN_HEIGHT / 2;
 	m_Duration = 1000;
+	m_PrevDuration = m_Duration;
 	m_Radius = IMAGE_SIZE * 0.5f * 0.5f;
 	m_IsDead = false;
 	m_IsInvincible = false;
@@ -68,6 +69,7 @@ void Player::Initialize(ID2D1HwndRenderTarget* renderTarget, Sprite * sprite)
 
 	m_InvincibleTimer = 0;
 	m_ShieldRechargeTimer = 0;
+	m_WarpDriveTimer = 0;
 	m_Bomb = 2;
 	m_BombExplosionRadius = 300.0f;
 
@@ -389,10 +391,20 @@ void Player::UseBomb()
 	}
 }
 
+void Player::ActivateWarpDrive()
+{
+	m_WarpDriveTimer = 100;
+	m_Duration *= 2;
+}
+
 void Player::OnTimer()
 {
-	m_InvincibleTimer--;
-	m_ShieldRechargeTimer--;
+	if (m_InvincibleTimer > -1)
+		m_InvincibleTimer--;
+	if (m_ShieldRechargeTimer > -1)
+		m_ShieldRechargeTimer--;
+	if (m_WarpDriveTimer > -1)
+		m_WarpDriveTimer--;
 
 	if (m_InvincibleTimer == 0)
 	{
@@ -407,8 +419,6 @@ void Player::OnTimer()
 		}
 	}
 
-	if (m_InvincibleTimer < 0)
-		m_InvincibleTimer = 0;
-	if (m_ShieldRechargeTimer < 0)
-		m_ShieldRechargeTimer = 0;
+	if (m_WarpDriveTimer == 0)
+		m_Duration = m_PrevDuration;
 }

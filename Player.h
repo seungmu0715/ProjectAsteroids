@@ -23,13 +23,14 @@ private:
 	int						m_PosX, m_PosY;
 	int						m_ReservX, m_ReservY;
 	int						m_Duration;
+	int						m_PrevDuration;
 	float					m_Radius;
-
 	bool					m_IsDead;
 	bool					m_IsInvincible;
 	bool					m_IsLoopValid;
 	int						m_InvincibleTimer;
 	int						m_ShieldRechargeTimer;
+	int						m_WarpDriveTimer;
 	int						m_Bomb;
 	float					m_BombExplosionRadius;
 
@@ -52,6 +53,7 @@ public:
 	int GetBomb()									{ return m_Bomb; };
 	int GetInvinsibleTimer()						{ return m_InvincibleTimer; };
 	int GetShieldRechargeTimer()					{ return m_ShieldRechargeTimer; };
+	int GetWarpDriveTimer()							{ return m_WarpDriveTimer; };
 
 	void InvalidateLoop()							{ m_IsLoopValid = false; };
 	void SetPosition(int x, int y);
@@ -59,6 +61,7 @@ public:
 	void UseBomb();
 	void IncreaseBomb()								{ m_Bomb++; };
 	void RechargeShield()							{ m_ShieldRechargeTimer = 1; };
+	void ActivateWarpDrive();
 
 	void OnTimer();
 };

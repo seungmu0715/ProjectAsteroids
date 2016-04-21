@@ -13,6 +13,7 @@ void Asteroid::Initialize(Sprite * sprite, int type, int fromX, int fromY, int t
 	m_DeltaY = (float)((toY - fromY) / Util::GetDistance(fromX, fromY, toX, toY));
 	m_Size = size;
 	m_Radius = IMAGE_SIZE * m_Size * 0.5f;
+	m_Speed = 1.0f;
 	m_IsDying = false;
 	m_IsDead = false;
 
@@ -22,8 +23,8 @@ void Asteroid::Initialize(Sprite * sprite, int type, int fromX, int fromY, int t
 
 void Asteroid::Update(DWORD delta)
 {
-	m_PosX += (int)((m_DeltaX / 10) * delta);
-	m_PosY += (int)((m_DeltaY / 10) * delta);
+	m_PosX += (int)((m_DeltaX / 10) * delta * m_Speed);
+	m_PosY += (int)((m_DeltaY / 10) * delta * m_Speed);
 
 	if (m_Rotation++ > 360 || m_Type != -1)
 		m_Rotation = 0;
@@ -45,7 +46,12 @@ void Asteroid::Render()
 			if (frame == 3)
 				m_IsDead = true;
 
-			m_Sprite->Draw(m_PosX, m_PosY, m_Size, 1, frame, 1.0f, m_Rotation);
+			float modif = (frame / 10.0f) * 2;		// 0.0 ~ 0.6; 투명화 등 프레임에 따른 효과를 위함
+
+			if (m_Type == -1)
+				m_Sprite->Draw(m_PosX, m_PosY, m_Size, 1, frame, 1.0f - modif, m_Rotation);
+			else
+				m_Sprite->Draw(m_PosX, m_PosY, m_Size + modif, 0, 0, 1.0f - modif, m_Rotation);
 		}
 	}
 }

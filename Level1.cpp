@@ -131,8 +131,8 @@ void Level1::SpawnAsteroids(bool isObstacle)
 		}
 		else
 		{
-			size = 1.0f;
-			type = rand() % 2;
+			size = 0.5f;
+			type = rand() % 3;
 			swprintf_s(buffer, L"res\\item%d.png", 1 + type);
 		}
 
@@ -348,11 +348,14 @@ void Level1::Update(DWORD delta)
 				{
 					switch (type)
 					{
-					case 0:							// 폭탄 개수 증가
+					case 0:								// 폭탄 개수 증가
 						m_Player->IncreaseBomb();
 						break;
-					case 1:							// 보호막 즉시 충전
+					case 1:								// 보호막 즉시 충전
 						m_Player->RechargeShield();
+						break;
+					case 2:
+						m_Player->ActivateWarpDrive();	// 일정 시간 동안 꼬리 길이 증가
 						break;
 					}
 				}
@@ -391,6 +394,8 @@ void Level1::Update(DWORD delta)
 	if (!m_Player->IsDead())
 	{
 		m_ShieldRecharge = 100 - m_Player->GetShieldRechargeTimer();
+		if (m_ShieldRecharge > 100)
+			m_ShieldRecharge = 100;
 		m_Bomb = m_Player->GetBomb();
 		m_Text[0]->SetText(m_ShieldRecharge);
 		m_Text[1]->SetText(m_Bomb);
@@ -546,5 +551,21 @@ void Level1::OnTimer()
 	SpawnAsteroids(true);
 
 	m_Player->OnTimer();
+	if (m_Player->GetWarpDriveTimer() > 0)
+	{
+		for (std::list<Asteroid*>::iterator itr = m_Asteroid.begin(); itr != m_Asteroid.end(); ++itr)
+		{
+			(*itr)->ActivateWarpDrive();
+		}
+	}
+	else if (m_Player->GetWarpDriveTimer() == 0)
+	{
+		for (std::list<Asteroid*>::iterator itr = m_Asteroid.begin(); itr != m_Asteroid.end(); ++itr)
+		{
+			(*itr)->DeactivateWarpDrive();
+		}
+	}
+	else
+		;// do nothing
 }
 

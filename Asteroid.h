@@ -12,6 +12,7 @@ private:
 	float		m_DeltaX, m_DeltaY;
 	float		m_Size;
 	float		m_Radius;
+	float		m_Speed;
 	bool		m_IsDying;
 	bool		m_IsDead;
 
@@ -31,5 +32,7 @@ public:
 	bool IsDead() { return m_IsDead; };
 
 	void SetDead();
+	void ActivateWarpDrive()		{ m_Speed = 0.5f; };
+	void DeactivateWarpDrive()		{ m_Speed = 1.0f; };
 };
 
